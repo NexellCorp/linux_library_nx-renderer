@@ -1,6 +1,8 @@
 CFLAGS = -Wall -fPIC
-INCLUDES := -I./include
-LDFLAGS := -L../tools-artik7/root/usr/lib
+INCLUDES := -I./include \
+		-I../libdrm/_install/include \
+		-I../libdrm/_install/include/libdrm
+LDFLAGS := -L../libdrm/_install/lib
 LIBS := -lkms -ldrm
 
 CROSS_COMPILE := aarch64-linux-gnu-
@@ -21,7 +23,6 @@ $(LIB_TARGET): $(OBJS)
 all: $(LIB_TARGET)
 
 install: $(LIB_TARGET)
-#	cp $^ ../libs
 #	cp $^ ../tools-artik7/root/usr/lib
 .PHONY: clean
 
