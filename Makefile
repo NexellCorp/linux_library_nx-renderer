@@ -24,7 +24,8 @@ all: $(LIB_TARGET)
 
 install: $(LIB_TARGET)
 	cp $^ ../sysroot/lib
-
+	cp include/dp.h ../sysroot/include
+	cp include/dp_common.h ../sysroot/include
 .PHONY: clean
 
 clean:
