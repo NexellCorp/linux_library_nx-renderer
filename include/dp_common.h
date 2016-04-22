@@ -1,6 +1,10 @@
 #ifndef _DP_COMMON_H_
 #define _DP_COMMON_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -28,5 +32,9 @@ void dp_debug_wait(int ms);
 		if (dp_dbg_on)	\
 			dp_bufmgr_debug(__func__, __LINE__, ##args);	\
 	} while (0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

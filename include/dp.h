@@ -1,10 +1,13 @@
 #ifndef _DP_HEADER_H_
 #define _DP_HEADER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-
 #include <xf86drmMode.h>
 
 struct dp_device {
@@ -130,5 +133,8 @@ bool dp_plane_supports_format(struct dp_plane *plane, uint32_t format);
  * display buffers APIs
  ***/
 
+#ifdef __cpulusplus
+}
+#endif
 
 #endif
