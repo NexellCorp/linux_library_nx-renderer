@@ -192,7 +192,7 @@ struct dp_plane *dp_device_find_plane_by_index(struct dp_device *device,
 	struct dp_crtc *crtc;
 	unsigned int i;
 
-	if (crtc_index >= device->num_crtcs-1) {
+	if (crtc_index > device->num_crtcs-1) {
 		DP_ERR("fail : crtc index %d over max %d\n",
 			crtc_index, device->num_crtcs);
 		return NULL;
