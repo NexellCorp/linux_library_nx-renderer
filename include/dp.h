@@ -133,7 +133,7 @@ bool dp_plane_supports_format(struct dp_plane *plane, uint32_t format);
  * display buffers APIs
  ***/
 
-#ifdef __cpulusplus
+#ifdef __cplusplus
 }
 #endif
 
