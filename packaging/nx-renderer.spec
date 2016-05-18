@@ -7,7 +7,7 @@ Group: Development/Libraries
 Source:  %{name}-%{version}.tar.gz
 
 BuildRequires:  pkgconfig(glib-2.0)
-BuildRequires:  libdrm
+BuildRequires:  libdrm-devel
 
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
