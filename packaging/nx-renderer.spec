@@ -28,23 +28,26 @@ Nexell drm renderer library (devel)
 %setup -q
 
 %build
-make
+autoreconf -v --install || exit 1
+%configure
+make %{?_smp_mflags}
 
 %postun -p /sbin/ldconfig
 
 %install
 rm -rf %{buildroot}
+make install DESTDIR=%{buildroot}
+
+find %{buildroot} -type f -name "*.la" -delete
 
 mkdir -p %{buildroot}/usr/include
 cp %{_builddir}/%{name}-%{version}/include/dp.h %{buildroot}/usr/include
 cp %{_builddir}/%{name}-%{version}/include/dp_common.h %{buildroot}/usr/include
 
-mkdir -p %{buildroot}/usr/lib
-cp %{_builddir}/%{name}-%{version}/libnx-renderer.so  %{buildroot}/usr/lib
-
 %files
-%attr (0644, root, root) %{_libdir}/libnx-renderer.so
+%{_libdir}/libnx_renderer.so
+%{_libdir}/libnx_renderer.so.*
 
 %files devel
-%attr (0644, root, root) %{_includedir}/dp.h
-%attr (0644, root, root) %{_includedir}/dp_common.h
+%{_includedir}/dp.h
+%{_includedir}/dp_common.h
