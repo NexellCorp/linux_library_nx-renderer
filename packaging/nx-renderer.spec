@@ -1,6 +1,6 @@
 Name:    nx-renderer
 Version: 0.0.1
-Release: 0
+Release: 1
 License: Apache 2.0
 Summary: Nexell drm renderer library
 Group: Development/Libraries
