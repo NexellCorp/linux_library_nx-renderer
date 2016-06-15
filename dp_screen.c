@@ -26,13 +26,13 @@ static int dp_screen_probe(struct dp_screen *screen)
 		con->connector_type_id);
 
 	if (false == screen->connected) {
-		DP_ERR("fail : ignoring unused connector %u\n",
+		DP_DBG("fail : ignoring unused connector %u\n",
 			con->connector_id);
 		return -ENOENT;
 	}
 
 	if (con->count_modes == 0) {
-		DP_ERR("fail : no valid mode for connector %u\n",
+		DP_DBG("fail : no valid mode for connector %u\n",
 			con->connector_id);
 		return -EFAULT;
 	}
