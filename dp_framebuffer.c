@@ -735,8 +735,7 @@ struct dp_framebuffer *dp_framebuffer_config(struct dp_device *device,
 
 		fb->handles[i] = gem_fd;
 		fb->sizes[i] = size;
-		fb->pitches[i] = CAL_ALIGN(width, 32);  
-
+		fb->pitches[i] = CAL_ALIGN(aw, 32);
 		DP_DBG("dumb : %s [%d] %dx%d hnd 0x%x, pitch %d, size %d, %d bpp\n",
 			dp_forcc_name(format), i, aw, ah,
 			fb->handles[i], fb->pitches[i], fb->sizes[i], bpp);
