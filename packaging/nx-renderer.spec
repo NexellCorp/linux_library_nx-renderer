@@ -1,7 +1,7 @@
 Name:    nx-renderer
 Version: 0.0.1
 Release: 2
-License: Apache 2.0
+License: LGPLv2+
 Summary: Nexell drm renderer library
 Group: Development/Libraries
 Source:  %{name}-%{version}.tar.gz
@@ -48,7 +48,9 @@ cp %{_builddir}/%{name}-%{version}/include/dp_common.h %{buildroot}/usr/include
 %files
 %{_libdir}/libnx_renderer.so
 %{_libdir}/libnx_renderer.so.*
+%license LICENSE.LGPLv2+
 
 %files devel
 %{_includedir}/dp.h
 %{_includedir}/dp_common.h
+%license LICENSE.LGPLv2+
