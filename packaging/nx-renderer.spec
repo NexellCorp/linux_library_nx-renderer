@@ -19,7 +19,7 @@ Nexell renderer library
 %package devel
 Summary: Nexell drm renderer library
 Group: Development/Libraries
-License: Apache 2.0
+License: LGPLv2+
 Requires: %{name} = %{version}-%{release}
 
 %description devel
