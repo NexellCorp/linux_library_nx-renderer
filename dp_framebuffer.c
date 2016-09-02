@@ -778,10 +778,10 @@ void dp_framebuffer_free(struct dp_framebuffer *fb)
 
 	count = fb->seperated ? fb->planes : 1;
 
-	for (i = 0; count > i; i++) {
+	for (i = 0; i < count; i++) {
 
 		if (!fb->handles[i])
-			continue;
+			break;
 		dp_buffer_free(device->fd, fb->handles[i]);
 	}
 
