@@ -208,6 +208,8 @@ static void fill_smpte_yuv_packed(const struct util_yuv_info *yuv, void *mem,
 	unsigned int x;
 	unsigned int y;
 
+	if ((width == 0) || ( height == 0))
+		return;
 	/* Luma */
 	for (y = 0; y < height * 6 / 9; ++y) {
 		for (x = 0; x < width; ++x)
@@ -303,6 +305,8 @@ static void fill_smpte_rgb16(const struct util_rgb_info *rgb, void *mem,
 	unsigned int x;
 	unsigned int y;
 
+	if ((width == 0) || ( height == 0))
+		return;
 	for (y = 0; y < height * 6 / 9; ++y) {
 		for (x = 0; x < width; ++x)
 			((uint16_t *)mem)[x] = colors_top[x * 7 / width];
@@ -364,6 +368,8 @@ static void fill_smpte_rgb24(const struct util_rgb_info *rgb, void *mem,
 	unsigned int x;
 	unsigned int y;
 
+	if ((width == 0) || ( height == 0))
+		return;
 	for (y = 0; y < height * 6 / 9; ++y) {
 		for (x = 0; x < width; ++x)
 			((struct color_rgb24 *)mem)[x] =
@@ -427,6 +433,8 @@ static void fill_smpte_rgb32(const struct util_rgb_info *rgb, void *mem,
 	unsigned int x;
 	unsigned int y;
 
+	if ((width == 0) || ( height == 0))
+		return;
 	for (y = 0; y < height * 6 / 9; ++y) {
 		for (x = 0; x < width; ++x)
 			((uint32_t *)mem)[x] = colors_top[x * 7 / width];
