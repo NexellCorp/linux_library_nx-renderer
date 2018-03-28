@@ -89,7 +89,7 @@ static int dp_framebuffer_dump_format_sizes(uint32_t format, int width, int heig
 	case DRM_FORMAT_BGRA1010102:
 	case DRM_FORMAT_BGRX1010102:
 		*bpp = 32;
-		*virtual_width = width * 4;
+		*virtual_width = width * 1;
 		*virtual_height = height;
 
 		*num_buffers = 1;
