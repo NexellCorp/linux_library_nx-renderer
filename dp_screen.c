@@ -42,6 +42,26 @@ static int dp_screen_probe(struct dp_screen *screen)
 	screen->width = screen->mode.hdisplay;
 	screen->height = screen->mode.vdisplay;
 
+	DP_DBG("count encoders : %d\n", con->count_encoders);
+	screen->count_encoders = con->count_encoders;
+	drmModeEncoderPtr enc = NULL;
+	struct dp_encoder *encoder;
+
+	encoder = calloc(1, sizeof(*encoder));
+	if (!encoder) {
+		DP_ERR("Failed to alloc memory for screen\n");
+		return -ENOMEM;
+	}
+	enc = &con->encoders[0];
+	DP_DBG("encoder id:%d, type:%d, crtc id:%d\n",
+			enc->encoder_id, enc->encoder_type, enc->crtc_id);
+	encoder->device = device;
+	encoder->id = enc->encoder_id;
+	encoder->type = enc->encoder_type;
+	encoder->crtc_id = enc->crtc_id;
+	DP_DBG("encoder type:%d, id:%d, crtc_id:%d\n",
+			encoder->type, encoder->id, encoder->crtc_id);
+	screen->encoders = encoder;
 	drmModeFreeConnector(con);
 
 	return 1;
@@ -72,9 +92,10 @@ struct dp_screen *dp_screen_create(struct dp_device *device, uint32_t id)
 
 void dp_screen_free(struct dp_screen *screen)
 {
-	if (screen)
-		free(screen->name);
-
+	if (screen) {
+		if (screen->encoders)
+			free(screen->encoders);
+	}
 	free(screen);
 }
 

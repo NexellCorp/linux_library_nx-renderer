@@ -46,32 +46,36 @@ static void dp_device_probe_screens(struct dp_device *device)
 		return;
 	}
 
+	DP_DBG("count connectors:%d\n", res->count_connectors);
 	for (i = 0; i < res->count_connectors; i++) {
 		unsigned int *count;
 		const char *type;
 		int len;
 
 		screen = dp_screen_create(device, res->connectors[i]);
-		if (!screen)
+		if (!screen) {
+			DP_ERR("Failed to create screen for %d\n", i);
 			continue;
+		} else {
+			/* assign a unique name to this screen */
+			type = connector_names[screen->type];
+			count = &counts[screen->type];
 
-		/* assign a unique name to this screen */
-		type = connector_names[screen->type];
-		count = &counts[screen->type];
+			len = snprintf(NULL, 0, "%s-%u", type, *count);
 
-		len = snprintf(NULL, 0, "%s-%u", type, *count);
+			screen->name = malloc(len + 1);
+			if (!screen->name) {
+				DP_ERR("Failed to malloc screen name for %d\n", i);
+				free(screen);
+				continue;
+			} else {
+				snprintf(screen->name, len + 1, "%s-%u", type, *count);
+				(*count)++;
 
-		screen->name = malloc(len + 1);
-		if (!screen->name) {
-			free(screen);
-			continue;
+				device->screens[i] = screen;
+				device->num_screens++;
+			}
 		}
-
-		snprintf(screen->name, len + 1, "%s-%u", type, *count);
-		(*count)++;
-
-		device->screens[i] = screen;
-		device->num_screens++;
 	}
 
 	drmModeFreeResources(res);
@@ -144,6 +148,53 @@ static void dp_device_probe(struct dp_device *device)
 	dp_device_probe_planes(device);
 }
 
+static struct dp_screen *get_connector_by_name(struct dp_device *dev, const char *name)
+{
+	struct dp_screen *connector;
+	int i;
+
+	for (i = 0; i < dev->num_screens; i++) {
+		connector = dev->screens[i];
+
+		if (strcmp(connector->name, name) == 0)
+			return connector;
+	}
+
+	return NULL;
+}
+
+static struct dp_screen *get_connector_by_id(struct dp_device *dev, uint32_t id)
+{
+	struct dp_screen *connector;
+	int i;
+
+	DP_DBG("connector id = %d\n", id);
+
+	for (i = 0; i < dev->num_screens; i++) {
+		connector = dev->screens[i];
+		DP_DBG("[%d] id = %d\n", i, connector->id);
+		if (connector && connector->id == id)
+			return connector;
+	}
+
+	DP_DBG("Failed to get connector has id:%d\n",id);
+	return NULL;
+}
+
+static int get_crtc_index(struct dp_device *dev, uint32_t id)
+{
+	int i = -1;
+
+	for (i = 0; i < dev->num_crtcs; ++i) {
+		struct dp_crtc *crtc = dev->crtcs[i];
+		if (crtc && crtc->id == id)
+			return i;
+	}
+	DP_DBG("id: %d, crtc index: %d\n", id, i);
+	return i;
+}
+
+
 struct dp_device *dp_device_open(int fd)
 {
 	struct dp_device *device;
@@ -184,6 +235,77 @@ void dp_device_close(struct dp_device *device)
 		close(device->fd);
 
 	free(device);
+}
+
+struct dp_plane *dp_device_find_plane_by_index_for_screen(struct dp_device *device,
+		unsigned int connector_index, unsigned int crtc_index, unsigned int plane_index)
+{
+	struct dp_crtc *crtc = NULL;
+	struct dp_screen *connector;
+	int i;
+
+	if (connector_index > device->num_screens -1) {
+		DP_ERR("fail: connector index %d over max %d\n",
+				connector_index, device->num_screens);
+	}
+	if (crtc_index > device->num_crtcs-1) {
+		DP_ERR("fail : crtc index %d over max %d\n",
+			crtc_index, device->num_crtcs);
+		return NULL;
+	}
+
+	connector = get_connector_by_id(device, device->screens[connector_index]->id);
+	if (!connector) {
+		DP_ERR("fail : get connector by id:%d\n", device->screens[connector_index]->id);
+		return NULL;
+	}
+
+	DP_DBG("Count Encoders:%d\n", connector->count_encoders);
+	for (i = 0; i < connector->count_encoders; ++i) {
+		struct dp_encoder *encoder;
+		int idx;
+
+		encoder = connector->encoders;
+		if (!encoder)
+			continue;
+		else {
+			DP_DBG("encoder->crtc_id: %d\n", encoder->crtc_id);
+			idx = get_crtc_index(device, encoder->crtc_id);
+			if ((idx >= 0) && (idx == device->crtcs[crtc_index]->id)) {
+				crtc = device->crtcs[crtc_index];
+				break;
+			}
+		}
+	}
+	if (!crtc) {
+		DP_ERR("fail : crtc id %d not equal for connector id %d\n",
+				crtc->id, device->screens[connector_index]->id);
+		return NULL;
+	}
+
+	for (i = 0; i < device->num_planes; i++) {
+		if (crtc->id != device->planes[i]->crtc->id)
+			continue;
+
+		if ((i + plane_index) >= device->num_planes)
+			return NULL;
+
+		if (crtc->id != device->planes[i]->crtc->id) {
+			DP_ERR("fail : crtc id %d not equal plane[%d]'s crtc id %d\n",
+				crtc->id, i, device->planes[i]->crtc->id);
+			return NULL;
+		}
+
+		DP_DBG("planes %d <%d.%d>: device->planes[%d]->type = 0x%x\n",
+			device->num_planes, crtc_index, plane_index,
+			i+plane_index, device->planes[i+plane_index]->type);
+
+		return device->planes[i+plane_index];
+	}
+	DP_ERR("fail : planes not exist (num planes %d)\n",
+		device->num_planes);
+
+	return NULL;
 }
 
 struct dp_plane *dp_device_find_plane_by_index(struct dp_device *device,
