@@ -487,6 +487,98 @@ static int dp_framebuffer_format_planes(unsigned int format,
 	return ret;
 }
 
+static int dp_framebuffer_format_interlace_planes(unsigned int format,
+			unsigned int width, unsigned int height,
+			int pitch, uint32_t handle,
+			uint32_t handles[4], unsigned int pitches[4],
+			unsigned int offsets[4])
+{
+	int num_planes = 0;
+	int i = 0, ret = 0;
+
+	DP_DBG("request %s (%d x %d, %d) handle: 0x%x\n",
+		dp_forcc_name(format), width, height, pitch, handle);
+
+	switch (format) {
+	case DRM_FORMAT_UYVY:
+	case DRM_FORMAT_VYUY:
+	case DRM_FORMAT_YUYV:
+	case DRM_FORMAT_YVYU:
+		offsets[0] = 0;
+		handles[0] = handle;
+		pitches[0] = pitch;
+		num_planes = 1;
+		break;
+
+	case DRM_FORMAT_NV12:
+	case DRM_FORMAT_NV21:
+	case DRM_FORMAT_NV16:
+	case DRM_FORMAT_NV61:
+		offsets[0] = 0;
+		handles[0] = handle;
+		pitches[0] = pitch;
+		pitches[1] = pitches[0];
+		offsets[1] = pitches[0] * height;
+		handles[1] = handle;
+		num_planes = 2;
+		break;
+
+	case DRM_FORMAT_YUV420:
+	case DRM_FORMAT_YVU420:
+		offsets[0] = 0;
+		handles[0] = handle;
+		pitches[0] = pitch;
+		pitches[1] = CAL_ALIGN(pitches[0] >> 1, 64);
+		offsets[1] = pitches[0] * CAL_ALIGN(height, 16);
+		handles[1] = handle;
+		pitches[2] = pitches[1];
+		offsets[2] = offsets[1] + pitches[1] * CAL_ALIGN(height / 2, 16);
+		handles[2] = handle;
+		num_planes = 3;
+		break;
+
+	case DRM_FORMAT_YUV422:
+	case DRM_FORMAT_YVU422:
+		offsets[0] = 0;
+		handles[0] = handle;
+		pitches[0] = pitch;
+		pitches[1] = pitches[0] / 2;
+		offsets[1] = pitches[0] * height;
+		handles[1] = handle;
+		pitches[2] = pitches[1];
+		offsets[2] = offsets[1] + pitches[1] * height;
+		handles[2] = handle;
+		num_planes = 3;
+		break;
+
+	case DRM_FORMAT_YUV444:
+	case DRM_FORMAT_YVU444:
+		offsets[0] = 0;
+		handles[0] = handle;
+		pitches[0] = pitch;
+		pitches[1] = pitches[0];
+		offsets[1] = pitches[0] * height;
+		handles[1] = handle;
+		pitches[2] = pitches[1];
+		offsets[2] = offsets[1] + pitches[1] * height;
+		handles[2] = handle;
+		num_planes = 3;
+		break;
+
+	default:
+		ret = -EINVAL;
+	}
+
+	if (0 > ret)
+		DP_ERR("%s : for %s\n", dp_forcc_name(format));
+
+	for (i = 0; num_planes > i; i++)
+		DP_DBG("[%d] hnd:0x%x, offs:%d, pitch:%d\n",
+			i, handles[i], offsets[i], pitches[i]);
+
+	return ret;
+}
+
 static int dp_framebuffer_dumb_format_maps(unsigned int format,
 			void *virtual, unsigned int offsets[4], void *planes[4])
 {
@@ -624,7 +716,8 @@ struct dp_framebuffer *dp_framebuffer_create(struct dp_device *device,
 	 */
 	for (i = 0; count > i; i++) {
 		unsigned int handle;
-		int pitch, size;
+		int pitch;
+		size_t size;
 		int fd = device->fd;
 		int aw = seperate ? w[i] : virtual_width;
 		int ah = seperate ? h[i] : virtual_height;
@@ -734,7 +827,7 @@ struct dp_framebuffer *dp_framebuffer_config(struct dp_device *device,
 		int ah = seperate ? h[i] : virtual_height;
 
 		fb->handles[i] = gem_fd;
-		fb->sizes[i] = size;
+		fb->sizes[i] = (size_t)size;
 		fb->pitches[i] = CAL_ALIGN(aw, 32);
 		DP_DBG("dumb : %s [%d] %dx%d hnd 0x%x, pitch %d, size %d, %d bpp\n",
 			dp_forcc_name(format), i, aw, ah,
@@ -758,6 +851,97 @@ struct dp_framebuffer *dp_framebuffer_config(struct dp_device *device,
 			goto err_create;
 
 		DP_DBG("dumb : %s hnd[0x%x,0x%x,0x%x], pitch[%d,%d,%d], offs[%d,%d,%d] \n",
+			dp_forcc_name(format),
+			fb->handles[0], fb->handles[1], fb->handles[2],
+			fb->pitches[0], fb->pitches[1], fb->pitches[2],
+			fb->offsets[0], fb->offsets[1], fb->offsets[2]);
+	}
+
+	return fb;
+
+err_create:
+	free(fb);
+	return NULL;
+}
+
+struct dp_framebuffer *dp_framebuffer_interlace_config(struct dp_device *device,
+			uint32_t format, int width, int height, bool seperate, int gem_fd, int size)
+{
+	struct dp_framebuffer *fb;
+	int virtual_width = 0;
+	int virtual_height = 0;
+	int buffers =  1, count = 0;
+	int w[3] = {0, };
+	int h[3] = {0, };
+	int bpp = 0, err;
+	int i;
+
+	if(!gem_fd)
+	{
+		DP_ERR("[%s] : invalid gem_fd : %d \n",__func__, gem_fd);
+		return NULL;
+	}
+
+	fb = calloc(1, sizeof(*fb));
+	if (!fb)
+		return NULL;
+
+	fb->device = device;
+	fb->width = width;
+	fb->height = height;
+	fb->format = format;
+
+	/*
+ 	 * format planes size
+ 	 */
+	err = dp_framebuffer_dump_format_sizes(format, width, height,
+			&virtual_width, &virtual_height, w, h, &bpp, &buffers);
+
+	if (err) {
+		free(fb);
+		return NULL;
+	}
+
+	if (1 == buffers)
+		seperate = 0;
+
+	count = seperate ? buffers : 1;
+
+	DP_DBG("dumb : (%d) %s buffer for %d buffers %d bpp\n",
+		count, seperate ? "seperated" : "one", buffers, bpp);
+	/*
+	 * allocate dumb buffers
+	 */
+	for (i = 0; count > i; i++) {
+		int aw = seperate ? w[i] : virtual_width;
+		int ah = seperate ? h[i] : virtual_height;
+
+		fb->handles[i] = gem_fd;
+		fb->sizes[i] = (size_t)size;
+		fb->pitches[i] = CAL_ALIGN(aw, 128);
+
+		DP_DBG("dumb : %s [%d] %dx%d hnd 0x%x, pitch %d, size %d, %d bpp\n",
+			dp_forcc_name(format), i, aw, ah,
+			fb->handles[i], fb->pitches[i], fb->sizes[i], bpp);
+	}
+
+	fb->planes = count;
+	fb->seperated = seperate;
+
+	if (!seperate) {
+		uint32_t handle = fb->handles[0];
+		int pitch = fb->pitches[0];
+
+		/*
+	 	 * format planes info
+	 	 */
+		err = dp_framebuffer_format_interlace_planes(format,
+					width, height, pitch, handle,
+					fb->handles, (unsigned int*)fb->pitches, fb->offsets);
+		if (0 > err)
+			goto err_create;
+
+		DP_DBG("dumb : %s hnd[0x%x,0x%x,0x%x], pitch[%d,%d,%d], offs[%d,%d,%d]\n",
 			dp_forcc_name(format),
 			fb->handles[0], fb->handles[1], fb->handles[2],
 			fb->pitches[0], fb->pitches[1], fb->pitches[2],

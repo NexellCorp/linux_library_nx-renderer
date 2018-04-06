@@ -54,6 +54,13 @@ struct dp_framebuffer {
 	void *ptrs[4];
 };
 
+struct dp_encoder {
+	struct dp_device *device;
+	uint32_t type;
+	uint32_t id;
+	uint32_t crtc_id;
+};
+
 struct dp_screen {
 	struct dp_device *device;
 	bool connected;
@@ -62,12 +69,12 @@ struct dp_screen {
 
 	unsigned int width;
 	unsigned int height;
+	int count_encoders;
+	struct dp_encoder *encoders;
 	char *name;
 
 	drmModeModeInfo mode;
 };
-
-
 
 /***
  * display device APIs
@@ -79,7 +86,8 @@ struct dp_plane *dp_device_find_plane_by_type(struct dp_device *device,
 						unsigned int plane_index);
 struct dp_plane *dp_device_find_plane_by_index(struct dp_device *device,
 						unsigned int crtc_index, unsigned int plane_index);
-
+struct dp_plane *dp_device_find_plane_by_index_for_screen(struct dp_device *device,
+		unsigned int connector_index, unsigned int crtc_index, unsigned int plane_index);
 
 /***
  * display CRTC APIs

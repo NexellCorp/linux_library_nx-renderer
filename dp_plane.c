@@ -108,7 +108,9 @@ bool dp_plane_supports_format(struct dp_plane *plane, uint32_t format)
 {
 	unsigned int i;
 
+	DP_DBG("request format 0x%x\n", format);
 	for (i = 0; i < plane->num_formats; i++) {
+		DP_DBG("support format %d --> 0x%x\n", i, plane->formats[i]);
 		if (plane->formats[i] == format) {
 			DP_DBG("done  :%s - %s\n",
 				dp_forcc_name(plane->formats[i]), dp_forcc_name(format));
