@@ -100,7 +100,7 @@ void dp_crtc_free(struct dp_crtc *crtc);
  * display buffer APIs
  ***/
 unsigned int dp_buffer_alloc(int fd, int width, int height, int bpp,
-			unsigned int *handle, int *pitch, int *size);
+			unsigned int *handle, int *pitch, size_t *size);
 void dp_buffer_free(int fd, unsigned int handle);
 
 /***
