@@ -12,7 +12,7 @@
 #include "dp.h"
 
 unsigned int dp_buffer_alloc(int fd, int width, int height, int bpp,
-				unsigned int *handle, int *pitch, int *size)
+				unsigned int *handle, int *pitch, size_t *size)
 {
 
 	struct drm_mode_create_dumb args;
