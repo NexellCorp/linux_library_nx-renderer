@@ -52,7 +52,13 @@ static int dp_screen_probe(struct dp_screen *screen)
 		DP_ERR("Failed to alloc memory for screen\n");
 		return -ENOMEM;
 	}
-	enc = &con->encoders[0];
+	enc = drmModeGetEncoder(device->fd, con->encoders[0]);
+	if (!enc) {
+		DP_ERR("Failed to get encoder\n");
+		free(encoder);
+		return -ENODEV;
+	}
+
 	DP_DBG("encoder id:%d, type:%d, crtc id:%d\n",
 			enc->encoder_id, enc->encoder_type, enc->crtc_id);
 	encoder->device = device;
@@ -63,6 +69,7 @@ static int dp_screen_probe(struct dp_screen *screen)
 			encoder->type, encoder->id, encoder->crtc_id);
 	screen->encoders = encoder;
 	drmModeFreeConnector(con);
+	drmModeFreeEncoder(enc);
 
 	return 1;
 }
