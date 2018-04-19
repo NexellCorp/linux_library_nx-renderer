@@ -1,3 +1,11 @@
+nx-renderer (1.0.1) unstable; urgency=medium
+
+  * nx-renderer: add a new function to find plane for a screen
+  * fix invalid encoder casting
+  * fix invalid type casting of size_t
+
+ -- Chanho Park <chanho61.park@samsung.com>  Thu, 19 Apr 2018 12:08:39 +0900
+
 nx-renderer (1.0.0) unstable; urgency=medium
 
   * Initial release
