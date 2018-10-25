@@ -109,7 +109,8 @@ void dp_buffer_free(int fd, unsigned int handle);
 
 struct dp_framebuffer *dp_framebuffer_config(struct dp_device *device,
 			uint32_t format, int width, int height, bool seperate, int gem_fd, int size);
-
+struct dp_framebuffer *dp_framebuffer_interlace_config(struct dp_device *device,
+			uint32_t format, int width, int height, bool seperate, int gem_fd, int size);
 struct dp_framebuffer *dp_framebuffer_create(struct dp_device *device,
 			uint32_t format, int width, int height, bool seperate);
 void dp_framebuffer_free(struct dp_framebuffer *db);
