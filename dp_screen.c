@@ -21,9 +21,11 @@ static int dp_screen_probe(struct dp_screen *screen)
 	else
 		screen->connected = false;
 
-	DP_DBG("connector %u (%s-%u)\n", con->connector_id,
+	/* return value is static, it caused Segmentation fault */
+	/*DP_DBG("connector %u (%s-%u)\n", con->connector_id,
 		util_lookup_connector_type_name(con->connector_type),
-		con->connector_type_id);
+		con->connector_type_id);*/
+	util_lookup_connector_type_name(con->connector_type);
 
 	if (false == screen->connected) {
 		DP_DBG("fail : ignoring unused connector %u\n",
